@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from bottle import route, run, get, post, request
 import random
 from mongo1 import CollConection
@@ -12,99 +14,90 @@ import requests
 def index():
     return dumps(coll.find())
 
-@get("/<tipo>")
-def demo2(tipo):
-    return dumps(coll.find({'userName':tipo}))
-
-'''@route('/data')
-def data():
-    return dumps(coll.find())'''
+@get("/<username>")
+def demo2(username):
+    return dumps(coll.find({'userName':username},{'userName':1, 'idUser':1, 'text':1, '_id':0}))
 
 
+@get("/chat/<chat_id>/list")
+def get_chat(chat_id):
+    return dumps(coll.find({"idChat":int(chat_id)},{'_id':0, 'idChat':1, 'userName':1, 'text':1}))
+
+# create sole user
 @post('/user/create')
 def newUser():
     name = str(request.forms.get("name"))
-    print(name)
     new_id = coll.distinct("idUser")[-1] + 1
-    print(new_id)
     new_user = {
         "idUser": new_id,
-        "userName": name
+        "participants": name
     }
-    print(new_user)
     coll.insert_one(new_user)
     print(f"{name} added to collection with id {new_id}")
 
 
-'''nombre_nuevo = {'name': 'Paquito'}
-requests.post("http://localhost:8080/user/create", data=nombre_nuevo)
-'''
-'''@get("/<name>")
-def getName():
-    return template('Hello {{name}}, how are you?', name=name)'''
+# add new user with message to new chat
+@post('/adduser')
+def addUserProfile():
+    idUser = coll.distinct("idUser")[-1] + 1
+    name = str(request.forms.get("userName"))
+    idMessage = coll.distinct("idMessage")[-1] + 1
+    idChat = coll.distinct("idChat")[-1] + 1
+    text = str(request.forms.get("text"))
+    document={"idUser":idUser,
+            "userName":name,
+            "idMessage":idMessage,
+            "idChat":idChat,
+            "text":text}
 
-'''@post('/add')
-def add():
-    print(dict(request.forms))
-    autor=request.forms.get("autor")
-    chiste=request.forms.get("chiste")  
+    coll.insert_one(document)
+    print("New user added to collection")
+
+@post('/chat/create')
+def newChat():
+    users = request.forms.getlist('user_id')
     return {
-        "inserted_doc": str(coll.addChiste(autor,chiste))}
-
-@post('/userName')
-def add_userName():
-    new_user = {'name' : request.json.get('name'),'address' : request.json.get('address'),'Dept':request.json.get('Dept')}
-    employee.append(new_emp)
-    return {'userName' : new_user}
-'''
-'''@post('/add')
-def process():
-    userName = request.forms.get('userName')
-    return {'userName' : userName}
-'''
+        'chat_id':str(db.createChat(users))}
 
 
-'''data = requests.get('http://localhost:8080/chiste/chiquito').json()
-print(data["chiste"])
-Van dos soldados en una moto y no se cae ninguno porque van soldados
-In [10]:
-requests.post('http://localhost:8080/add')
-Out[10]:
-<Response [200]>
-In [9]:
-url='http://localhost:8080/add'
-params={'autor':'chiquito',
-       'chiste':'prueba5'}'''
+# Adds user to existing chat with their text
+@post('/chat/<chat_id>/adduser')
+def addUserToChat(idChat):
+    idUser = coll.distinct("idUser")[-1] + 1
+    name = str(request.forms.get("userName"))
+    idMessage = coll.distinct("idMessage")[-1] + 1
+    idChat = int(idChat)
+    text = str(request.forms.get("text"))
+    document = {"idUser":idUser,
+            "userName":name,
+            "idMessage":idMessage,
+            "idChat":idChat,
+            "text":text}
+    coll.insert_one(document)
+    print("New user added to chat{}".format(idChat))
+
+@post('/chat/<chat_id>/addmessage')
+def newChatMessage():
+    name = str(request.forms.get("name"))
+    new_id = coll.distinct("idUser")[-1] + 1
+    new_idmessage = coll.distinct("idMessage")[-1] + 1
+    new_chat = coll.distinct("idChat")[-1] + 1
+    datetime= str(request.forms.get("datetime"))
+    text = str(request.forms.get("text"))
+    new_user = {
+        "idUser": new_id,
+        "userName": name,
+        "idMessage": new_idmessage,
+        "idChat": new_chat,
+        "datatime": datetime,
+        "text": text
+    }
+    coll.insert_one(new_user)
+    print("{} added to collection with id {}".format(name, new_id))
 
 
-
-'''@get("/chat/<tipo>")
-def demo(tipo):
-    print(f"un chiste de {tipo}")
-    if tipo == "chiquito":
-        return {
-            "chiste": "Van dos soldados en una moto y no se cae ninguno porque van soldados"
-        }
-    elif tipo == "eugenio":
-        return {
-            "chiste": "Saben aquell que diu...."
-        }
-    else:
-        return {
-            "chiste": "No puedorrr!!"
-        }
-
-@post('/add')
-def add():
-    print(dict(request.forms))
-    autor=request.forms.get("autor")
-    chiste=request.forms.get("chiste")  
-    return {
-        "inserted_doc": str(coll.addChiste(autor,chiste))}
-
-'''
 #coll=CollConection('conversation','chats')
-run(host='localhost', port=8080)
+run(host='localhost', port=8080, debug=True)
 
 
 

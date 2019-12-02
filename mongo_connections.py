@@ -5,6 +5,9 @@ import getpass
 import json
 import os
 
+def getCollection():
+    collection = input('Insert desired collection: ')
+    return collection
 
 #Get Password
 password = getpass.getpass("Insert your AtlasMongoDB admin_1019 password: ")
@@ -17,10 +20,8 @@ def connectCollection(database, collection):
     coll = db[collection]
     return db, coll
 
-db, coll = connectCollection('conversation','conversation')
+collection = getCollection()
 
-with open('chats.json') as f:
-    chats_json = json.load(f)
+db, coll = connectCollection('conversation', collection)
 
-if coll == 0:
-    coll.insert_many(chats_json)
+
