@@ -4,11 +4,12 @@ from pymongo import MongoClient
 import getpass
 import json
 import os
+from dotenv import load_dotenv
+load_dotenv()
 
 
 #Get Password
-password = getpass.getpass("Insert your AtlasMongoDB admin_1019 password: ")
-connection = "mongodb+srv://seorakwon:{}@cluster0-rxtil.mongodb.net/test?retryWrites=true&w=majority".format(password)
+connection = os.getenv("mongoURL")
 
 #Connect to DB
 client = MongoClient(connection)
@@ -21,6 +22,4 @@ db, coll = connectCollection('conversation','conversation')
 
 with open('chats.json') as f:
     chats_json = json.load(f)
-
-if coll == 0:
     coll.insert_many(chats_json)
